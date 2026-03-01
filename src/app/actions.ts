@@ -1,30 +1,27 @@
 "use server";
-
 import prisma from "./lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-
-
 export async function addTransaction(formData: FormData) {
   // ดึงค่าจากฟอร์มที่ user กรอก
-  const amount = parseFloat(formData.get("amount") as string);
+  const rawAmount = parseFloat(formData.get("amount") as string);
+  const type = formData.get("type") as string; // "income" หรือ "expense"
   const name = formData.get("name") as string;
   const category = formData.get("category") as string;
   const dateStr = formData.get("date") as string;
-  
+
   // แปลงวันที่ (ถ้า user ไม่กรอก เอาวันปัจจุบัน)
   const date = dateStr ? new Date(dateStr) : new Date();
 
-  // ตรวจสอบว่า type (รายรับ/รายจ่าย) เป็นอะไร
-  // สมมติ: ถ้าเลือก Expense เราจะคูณ -1 เข้าไปที่ amount ให้เป็นค่าติดลบ
-  // แต่ใน UI เรายังไม่มีปุ่มเลือก Type เดี๋ยวผมพาทำแบบง่ายก่อนคือ ใส่ลบเอง หรือ ใส่บวกเอง
+  // ถ้าเป็นรายจ่าย ให้ amount เป็นค่าติดลบ, รายรับเป็นบวก
+  const amount = type === "expense" ? -Math.abs(rawAmount) : Math.abs(rawAmount);
 
   // สั่งบันทึกลง Database
   await prisma.transaction.create({
     data: {
       name,
-      amount, // ถ้าใส่ -500 มันก็จะเก็บ -500
+      amount,
       category,
       date,
     },
@@ -32,11 +29,10 @@ export async function addTransaction(formData: FormData) {
 
   // สั่งให้หน้า Dashboard รีเฟรชข้อมูลใหม่
   revalidatePath("/");
-  
+
   // บันทึกเสร็จ เด้งกลับไปหน้าแรก
   redirect("/");
 }
-// ... (โค้ดเดิม) ...
 
 export async function deleteTransaction(formData: FormData) {
   // ดึง ID ที่ซ่อนอยู่ในปุ่มลบ
@@ -52,15 +48,18 @@ export async function deleteTransaction(formData: FormData) {
   revalidatePath("/activity");
   revalidatePath("/edit");
 }
-// ... (โค้ดเดิม) ...
 
 export async function updateTransaction(formData: FormData) {
-  const id = parseInt(formData.get("id") as string); // รับ ID ว่าจะแก้ตัวไหน
-  const amount = parseFloat(formData.get("amount") as string);
+  const id = parseInt(formData.get("id") as string);
+  const rawAmount = parseFloat(formData.get("amount") as string);
+  const type = formData.get("type") as string; // "income" หรือ "expense"
   const name = formData.get("name") as string;
   const category = formData.get("category") as string;
   const dateStr = formData.get("date") as string;
   const date = dateStr ? new Date(dateStr) : new Date();
+
+  // ถ้าเป็นรายจ่าย ให้ amount เป็นค่าติดลบ, รายรับเป็นบวก
+  const amount = type === "expense" ? -Math.abs(rawAmount) : Math.abs(rawAmount);
 
   // สั่ง Update ข้อมูลใน Database
   await prisma.transaction.update({
@@ -75,5 +74,5 @@ export async function updateTransaction(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/edit");
-  redirect("/edit"); // แก้เสร็จให้เด้งกลับไปหน้ารายการ Edit
+  redirect("/edit");
 }

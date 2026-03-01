@@ -1,8 +1,7 @@
-// src/app/layout.tsx
 import type { Metadata } from "next";
-import { Inter } from "next/font/google"; // หรือฟอนต์อื่นที่คุณเลือก
+import { Inter } from "next/font/google";
 import "./globals.css";
-import Sidebar from "./components/Sidebar"; // import ตัวที่เราเพิ่งสร้าง
+import LayoutClient from "./components/LayoutClient";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,15 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} bg-gray-50`}>
-        <div className="flex min-h-screen">
-          {/* ส่วน Sidebar */}
-          <Sidebar />
-
-          {/* ส่วนเนื้อหา (Content) จะถูกดันไปทางขวา */}
-          <main className="flex-1 ml-64 p-8">
-            {children}
-          </main>
-        </div>
+        <LayoutClient>{children}</LayoutClient>
       </body>
     </html>
   );
